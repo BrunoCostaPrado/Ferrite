@@ -1,0 +1,39 @@
+{
+	"name": "ferrite",
+	"version": "0.1.0",
+	"description": "TypeScript compiler powered by Rust",
+	"main": "dist/ferrite.js",
+	"types": "dist/ferrite.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/ferrite.d.ts",
+			"default": "./dist/ferrite.js"
+		}
+	},
+	"bin": {
+		"ferrite": "dist/src/cli.js"
+	},
+	"files": [
+		"dist",
+		"bin"
+	],
+	"scripts": {
+		"build": "tsdown",
+		"lint": "biome check --write .",
+		"typecheck": "tsc --noEmit"
+	},
+	"keywords": [
+		"typescript",
+		"compiler",
+		"rust"
+	],
+	"author": "",
+	"license": "ISC",
+	"type": "module",
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.5",
+		"@types/node": "^26.1.1",
+		"tsdown": "^0.22.13",
+		"typescript": "^5.7.3"
+	}
+}

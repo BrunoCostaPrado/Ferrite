@@ -1,0 +1,36 @@
+/target
+Cargo.lock
+
+# Agent/tool state
+.codegraph/
+.opencode/
+.gemini/
+graphify-out/
+.worktrees
+
+# IDE
+.vscode/
+.vs/
+
+# Rust
+.cargo/
+
+# npm
+node_modules/
+npm/dist/
+npm/tsconfig.tsbuildinfo
+*.ferrite-tsconfig.json
+
+# Python
+__pycache__/
+*.pyc
+
+# Build output
+*.js
+*.js.map
+
+# Stale
+error.txt
+out.txt
+
+.graphifyignore

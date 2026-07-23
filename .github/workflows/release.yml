@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            bin: ferrite
+            platform: linux-x64
+          - target: x86_64-apple-darwin
+            os: macos-13
+            bin: ferrite
+            platform: darwin-x64
+          - target: aarch64-apple-darwin
+            os: macos-14
+            bin: ferrite
+            platform: darwin-arm64
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            bin: ferrite.exe
+            platform: win32-x64
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.platform }}
+          path: target/${{ matrix.target }}/release/${{ matrix.bin }}
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Download all binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: npm/bin
+          pattern: binary-*
+          merge-multiple: true
+
+      - name: Organize binaries
+        run: |
+          mkdir -p npm/bin/linux-x64 npm/bin/darwin-x64 npm/bin/darwin-arm64 npm/bin/win32-x64
+          find npm/bin -type f | head -20
+          # artifacts download to flat dir — move to platform dirs
+          for dir in npm/bin/binary-*/; do
+            platform=$(basename "$dir" | sed 's/binary-//')
+            mv "$dir"* "npm/bin/$platform/" 2>/dev/null || true
+            rmdir "$dir" 2>/dev/null || true
+          done
+          chmod +x npm/bin/linux-x64/* npm/bin/darwin-x64/* npm/bin/darwin-arm64/* 2>/dev/null || true
+          ls -R npm/bin/
+
+      - name: Build npm package
+        working-directory: npm
+        run: |
+          npm install
+          npm run build
+
+      - name: Publish
+        working-directory: npm
+        run: npm publish --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
